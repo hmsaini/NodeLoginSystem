@@ -3,6 +3,7 @@ var router = express.Router();
 var multer = require('multer');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var path = require('path');
 
 var User = require('../models/user');
 var isMatch = require('../models/user');
@@ -19,56 +20,55 @@ router.get('/register', function (req, res, next) {
 });
 
 router.get('/login', function (req, res, next) {
-	// var sess = req.session;
-	// if (sess) {
-	// 	res.redirect('/');
-	// } else {
-		res.render('login', {
-			'title': 'LogIn'
-		});
-	// }
+	if(req.user){
+		// Already logged in
+		res.redirect('/');
+	}
+	res.render('login', {
+		'title': 'LogIn'
+	});
 });
 
+// **********************************************************
+var upload = multer({
+	storage: multer.diskStorage({
 
+		destination: function (req, file, callback) {
+			callback(null, './uploads');
+		},
+		filename: function (req, file, callback) {
+			callback(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+		}
 
+	}),
 
-/* GET users listing. */
-
+	fileFilter: function (req, file, callback) {
+		var ext = path.extname(file.originalname)
+		if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
+			return callback( /*res.end('Only images are allowed')*/ null, false)
+		}
+		callback(null, true)
+	}
+});
+//   **********************************************************
 
 // POST METHOD
-var uploads = multer({
-	dest: './uploads'
-});
-router.post('/register', function (req, res, next) {
+router.post('/register', upload.any(), function (req, res, next) {
 	// get form values
 	var name = req.body.name;
 	var email = req.body.email;
 	var username = req.body.username;
 	var password = req.body.password;
 	var password2 = req.body.password2;
+	console.log(req.files);
 
-	console.log(name);
+	var profileimage = '';
 
-	// Check for image field
-	if (req.files && req.files.profileimage)
-	// if(req.file)
-	{
-		console.log('Uploading File...');
-
-		// FILE INFO
-		var profileImageOriginalName = req.files.profileimage.originalname;
-		var profileImageName = req.files.profileimage.name;
-		var profileImageMime = req.files.profileimage.mimetype;
-		var profileImagePath = req.files.profileimage.path;
-		var profileImageExt = req.files.profileimage.extension;
-		var profileImageSize = req.files.profileimage.size;
-
-		console.log(profileImagePath);
+	if (req.file) {
+		profileimage = req.files[0].filename
 	} else {
-		// set default image
-		var profileImageName = 'noimage.png';
+		profileimage = 'noimage';
 	}
-
 	// Form Validators
 	req.checkBody('name', 'Name is required').notEmpty();
 	req.checkBody('email', 'Email is required').notEmpty();
@@ -87,8 +87,8 @@ router.post('/register', function (req, res, next) {
 			email: email,
 			username: username,
 			password: password,
-			password2: password2
-			// profileimage:profileImageName
+			password2: password2,
+			profileimage: profileimage
 		});
 	} else {
 		//checking for email and username are already taken
@@ -115,7 +115,7 @@ router.post('/register', function (req, res, next) {
 						email: email,
 						username: username,
 						password: password,
-						profileimage: profileImageName
+						profileimage: profileimage
 					});
 					User.createUser(newUser, function (err, user) {
 						if (err) throw err;
@@ -129,7 +129,7 @@ router.post('/register', function (req, res, next) {
 	}
 });
 
-// ============== LOGIN ===================
+// ============== LOGIN  ===================
 
 
 passport.use(new LocalStrategy(
@@ -184,6 +184,7 @@ router.post('/login', passport.authenticate('local', {
 	req.flash('success_msg', 'You are logged in');
 	res.redirect('/');
 });
+
 
 
 // ===============logout===============

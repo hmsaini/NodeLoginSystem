@@ -63,10 +63,10 @@
 {{/if}}
 
 
-      <form method="post" action="/users/register" enctype="mutltipart/form-data">
+      <form method="post" action="/users/register" enctype="multipart/form-data">
     <div class="form-group">
       Name:
-      <input type="text" name="name" placeholder="Enter Name"  class="form-control"  > 
+      <input type="text" name="name" placeholder="Enter Name"  class="form-control" required > 
     </div>
     <div class="form-group">
       Email:
@@ -86,7 +86,7 @@
     </div>
     <div class="form-group">
       Profile Picture:
-      <input type="file" name="profileimage"  class="form-control"  > 
+      <input type="file" name="profileimage"  class="form-control"> 
     </div>
                                 
         <div>
